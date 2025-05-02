@@ -1,16 +1,22 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Speech.Synthesis;
 using System.Windows.Input;
+using System.Windows.Threading;
 using DesktopAxiasFutureApp.Services;
 
 namespace DesktopAxiasFutureApp.ViewModels
 {
-    public class FeedViewModel : INotifyPropertyChanged
+    public class FeedViewModel : INotifyPropertyChanged, IDisposable
     {
-        private readonly WebSocketService _webSocketService = new();
-        private readonly SpeechSynthesizer _synthesizer = new();
-        public ObservableCollection<string> Messages { get; set; } = new();
+        private readonly WebSocketService _webSocketService;
+        private readonly SpeechSynthesizer _synthesizer;
+        private readonly Dispatcher _dispatcher;
+
+        private bool _disposed;
+
+        public ObservableCollection<string> Messages { get; }
 
         private int _volume = 100;
         public int Volume
@@ -23,12 +29,55 @@ namespace DesktopAxiasFutureApp.ViewModels
             }
         }
 
-        public ICommand ReadLastMessageCommand => new RelayCommand(_ => ReadLastMessage());
+        public ICommand ReadLastMessageCommand { get; }
+
+        public FeedViewModel()
+        {
+            _webSocketService = new WebSocketService();
+            _synthesizer = new SpeechSynthesizer();
+            Messages = new ObservableCollection<string>();
+            ReadLastMessageCommand = new RelayCommand(_ => ReadLastMessage());
+
+            // Obter o dispatcher atual (para WPF)
+            _dispatcher = Dispatcher.CurrentDispatcher;
+        }
 
         public async void Initialize()
         {
-            _webSocketService.OnMessageReceived += (msg) => Messages.Add(msg);
-            await _webSocketService.ConnectAsync("wss://edge-api.axiafutures.com/ws/?token=U2FsdGVkX1+...");
+            _webSocketService.MessageReceived += HandleMessageReceived;
+            _webSocketService.ErrorOccurred += HandleError;
+
+            try
+            {
+                await _webSocketService.ConnectAsync("wss://edge-api.axiafutures.com/ws/?token=U2FsdGVkX1+YcfF5A506hKmuKwlK2a4WErOATfH/Ek9GtuMmtY0FbGqnH892r4B8");
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+
+        private void HandleMessageReceived(string message)
+        {
+            // Usar o dispatcher para garantir thread safety
+            _dispatcher.Invoke(() =>
+            {
+                Messages.Add(message);
+
+                // Opcional: Limitar o número máximo de mensagens armazenadas
+                if (Messages.Count > 100)
+                {
+                    Messages.RemoveAt(0);
+                }
+            });
+        }
+
+        private void HandleError(Exception ex)
+        {
+            _dispatcher.Invoke(() =>
+            {
+                Messages.Add($"Erro: {ex.Message}");
+            });
         }
 
         private void ReadLastMessage()
@@ -40,8 +89,29 @@ namespace DesktopAxiasFutureApp.ViewModels
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _webSocketService?.Dispose();
+                    _synthesizer?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
     }
 }

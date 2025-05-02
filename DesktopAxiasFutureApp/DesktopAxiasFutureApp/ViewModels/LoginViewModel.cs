@@ -1,4 +1,5 @@
-﻿using DesktopAxiasFutureApp.Models;
+﻿using DesktopAxiasFutureApp.Interfaces;
+using DesktopAxiasFutureApp.Models;
 using DesktopAxiasFutureApp.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -8,7 +9,7 @@ namespace DesktopAxiasFutureApp.ViewModels
 {
     public class LoginViewModel : INotifyPropertyChanged
     {
-        private readonly AuthService _authService = new();
+        private readonly LoginService _authService = new();
         public LoginModel Credentials { get; set; } = new();
 
         public RelayCommand LoginCommand => new(async _ => await LoginAsync());
@@ -21,7 +22,8 @@ namespace DesktopAxiasFutureApp.ViewModels
                 return;
             }
 
-            var success = await _authService.LoginAsync(Credentials);
+            var success = await _authService.AuthenticateAsync(Credentials.Username, Credentials.Password);
+
             if (success)
             {
                 Application.Current.Dispatcher.Invoke(() =>

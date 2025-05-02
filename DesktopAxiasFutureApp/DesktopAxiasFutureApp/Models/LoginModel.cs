@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DesktopAxiasFutureApp.Models
+﻿namespace DesktopAxiasFutureApp.Models
 {
     public class LoginModel
     {

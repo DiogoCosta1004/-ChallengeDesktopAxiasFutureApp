@@ -1,50 +1,88 @@
-﻿using System;
+﻿using DesktopAxiasFutureApp.Interfaces;
 using System.Net.WebSockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace DesktopAxiasFutureApp.Services
+public class WebSocketService : IWebSocketService
 {
-    public class WebSocketService : IDisposable
+    private ClientWebSocket _socket;
+    private CancellationTokenSource _cts;
+
+    public event Action<string> MessageReceived;
+    public event Action<Exception> ErrorOccurred; 
+    public event Action ConnectionClosed;
+
+    public WebSocketService()
     {
-        private readonly ClientWebSocket _socket = new();
-        public event Action<string>? OnMessageReceived;
+        _socket = new ClientWebSocket();
+        _cts = new CancellationTokenSource();
+    }
 
-        public async Task ConnectAsync(string uri)
+    public async Task ConnectAsync(string uri)
+    {
+        try
         {
-            await _socket.ConnectAsync(new Uri(uri), CancellationToken.None);
-            _ = ReceiveMessagesAsync();
+            await _socket.ConnectAsync(
+                new Uri(uri),
+                _cts.Token);
+
+            _ = Task.Run(ReceiveMessages, _cts.Token);
         }
-
-        private async Task ReceiveMessagesAsync()
+        catch (Exception ex)
         {
-            var buffer = new byte[2048];
-            while (_socket.State == WebSocketState.Open)
-            {
-                var result = await _socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-                var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            ErrorOccurred?.Invoke(ex); 
+            ConnectionClosed?.Invoke();
+        }
+    }
 
-                if (message == "ping")
+    private async Task ReceiveMessages()
+    {
+        var buffer = new byte[1024 * 4];
+
+        while (_socket.State == WebSocketState.Open)
+        {
+            try
+            {
+                var result = await _socket.ReceiveAsync(
+                    new ArraySegment<byte>(buffer),
+                    _cts.Token);
+
+                if (result.MessageType == WebSocketMessageType.Text)
                 {
-                    await SendAsync("pong");
-                }
-                else
-                {
-                    OnMessageReceived?.Invoke(message);
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+                    if (message == "ping")
+                    {
+                        await SendPongAsync();
+                    }
+                    else
+                    {
+                        MessageReceived?.Invoke(message);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                ErrorOccurred?.Invoke(ex); 
+                ConnectionClosed?.Invoke();
+                break;
+            }
         }
+    }
 
-        public async Task SendAsync(string message)
-        {
-            var bytes = Encoding.UTF8.GetBytes(message);
-            await _socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, CancellationToken.None);
-        }
+    private async Task SendPongAsync()
+    {
+        var pong = Encoding.UTF8.GetBytes("pong");
+        await _socket.SendAsync(
+            new ArraySegment<byte>(pong),
+            WebSocketMessageType.Text,
+            true,
+            _cts.Token);
+    }
 
-        public void Dispose()
-        {
-            _socket?.Dispose();
-        }
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _socket?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
