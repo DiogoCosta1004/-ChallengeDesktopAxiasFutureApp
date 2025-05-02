@@ -10,14 +10,14 @@ namespace DesktopAxiasFutureApp.Services
         public TextToSpeechService()
         {
             _synthesizer = new SpeechSynthesizer();
-            _synthesizer.Volume = 50; // Volume padrão (0 a 100)
+            _synthesizer.Volume = 50; 
         }
 
         public void Speak(string text)
         {
             if (!string.IsNullOrWhiteSpace(text))
             {
-                _synthesizer.SpeakAsyncCancelAll(); // Cancela fala anterior, se houver
+                _synthesizer.SpeakAsyncCancelAll(); 
                 _synthesizer.SpeakAsync(text);
             }
         }

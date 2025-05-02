@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Speech.Synthesis;
 using System.Windows.Input;
 using System.Windows.Threading;
-using DesktopAxiasFutureApp.Services;
 
 namespace DesktopAxiasFutureApp.ViewModels
 {
@@ -38,7 +37,6 @@ namespace DesktopAxiasFutureApp.ViewModels
             Messages = new ObservableCollection<string>();
             ReadLastMessageCommand = new RelayCommand(_ => ReadLastMessage());
 
-            // Obter o dispatcher atual (para WPF)
             _dispatcher = Dispatcher.CurrentDispatcher;
         }
 
@@ -59,12 +57,10 @@ namespace DesktopAxiasFutureApp.ViewModels
 
         private void HandleMessageReceived(string message)
         {
-            // Usar o dispatcher para garantir thread safety
             _dispatcher.Invoke(() =>
             {
                 Messages.Add(message);
 
-                // Opcional: Limitar o número máximo de mensagens armazenadas
                 if (Messages.Count > 100)
                 {
                     Messages.RemoveAt(0);

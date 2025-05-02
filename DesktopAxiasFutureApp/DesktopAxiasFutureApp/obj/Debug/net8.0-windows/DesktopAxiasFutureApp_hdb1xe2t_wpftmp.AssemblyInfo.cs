@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DesktopAxiasFutureApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+506b4ab673e9d2b9fbc4b07400391c5075094fe4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
 [assembly: System.Reflection.AssemblyProductAttribute("DesktopAxiasFutureApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DesktopAxiasFutureApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
