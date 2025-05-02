@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DesktopAxiasFutureApp.Interfaces
+﻿namespace DesktopAxiasFutureApp.Interfaces
 {
     public interface IWebSocketService : IDisposable
     {

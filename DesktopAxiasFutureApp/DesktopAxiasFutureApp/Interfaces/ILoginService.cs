@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace DesktopAxiasFutureApp.Interfaces
+﻿namespace DesktopAxiasFutureApp.Interfaces
 {
     public interface ILoginService
     {
